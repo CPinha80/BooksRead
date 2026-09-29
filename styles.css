@@ -274,3 +274,12 @@ button.danger { background: var(--surface); color: var(--danger); }
 @media (max-width: 360px) {
   .ai-actions, .kpis { grid-template-columns: 1fr; }
 }
+
+/* Importação */
+.primary-file { display: inline-block !important; margin-top: 12px; background: var(--accent) !important; color: var(--accent-ink) !important; padding: 12px 20px !important; }
+.map-grid { display: grid; gap: 8px; }
+.map-grid label { grid-template-columns: 120px 1fr; align-items: center; }
+.map-grid select { min-width: 0; }
+#import-preview li { font-size: 13px; }
+#import-preview li span:first-child { color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+#import-preview li strong { font-weight: 400; color: var(--text-2); white-space: nowrap; }

@@ -21,6 +21,7 @@ Aplicação para gestão de livros e leitura, feita para usar no iPhone como app
   - ❓ **Testa-te**: quiz sobre as ideias dos teus livros
   - 🪞 **Perfil de leitor**: temas, evolução e padrões
   - perguntas livres; as análises ficam guardadas
+- **Importar a lista que já tens** — de Excel (.xlsx) ou CSV. A app reconhece as colunas pelos nomes (Título/Livro, Autor, Género, Páginas, Lido?/Estado, Data de início, Data de fim, Classificação/Nota, Notas/Comentários). Podes corrigir a correspondência antes de importar, e os livros repetidos são ignorados.
 - **Cópia de segurança** — exporta e importa em JSON e exporta em CSV (abre no Excel/Numbers).
 - Funciona **offline** e tem **modo escuro** automático.
 
@@ -50,6 +51,19 @@ A chave fica guardada só no teu iPhone (armazenamento local) e é enviada apena
 
 **Sem chave?** Ao tocares numa opção do modo IA, a app copia o prompt completo (com a tua biblioteca) para colares na app Claude.
 
+## Importar do Excel
+
+1. Guarda o ficheiro .xlsx no iPhone (por exemplo, na app Ficheiros ou no iCloud Drive).
+2. Na app: **Importar Excel ou CSV** (no ecrã inicial vazio) ou **Definições → Importar**.
+3. Confirma que coluna corresponde a cada campo e vê a pré-visualização. Depois toca em **Importar**.
+
+Notas:
+- Aceita datas do Excel, `dd/mm/aaaa`, `aaaa-mm-dd` ou só o ano (neste caso assume 31 de dezembro desse ano).
+- Na coluna de estado, entende «Sim», «x», «Lido», «A ler», «Por ler», «Não» e «Abandonado».
+- Classificações de 0 a 10 são convertidas para estrelas de 1 a 5.
+- Linhas sem estado e sem datas ficam como «Lido» ou «Por ler», conforme escolheres.
+- Ficheiros .xls antigos e do Numbers não são lidos: exporta-os primeiro como .xlsx ou .csv.
+
 ## Os teus dados
 
 Tudo é guardado no armazenamento local do Safari, neste dispositivo. O iOS pode apagar esses dados se limpares os dados do Safari ou se a app ficar muito tempo sem ser usada, por isso **exporta a cópia de segurança de vez em quando** (Definições → Exportar JSON) e guarda-a no iCloud Drive.
@@ -67,6 +81,7 @@ python3 -m http.server 8000   # abre http://localhost:8000
 | `index.html`, `styles.css` | Interface |
 | `js/app.js` | Navegação, lista, formulário, IA e definições |
 | `js/store.js` | Persistência local, importar e exportar |
+| `js/importer.js` | Leitura de .xlsx e CSV e correspondência de colunas |
 | `js/stats.js` | Cálculo e gráficos das métricas |
 | `js/ai.js` | Prompts e chamadas à API Claude |
 | `vendor/anthropic-sdk.mjs` | SDK oficial `@anthropic-ai/sdk` (0.129.0) num único ficheiro para o browser |
