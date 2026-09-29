@@ -52,6 +52,28 @@ export const store = {
     return save();
   },
 
+  /** Adiciona vários livros, ignorando os que já existem (mesmo título e autor). */
+  addBooks(list) {
+    const key = b => `${(b.title || '').trim().toLocaleLowerCase('pt')}|${(b.author || '').trim().toLocaleLowerCase('pt')}`;
+    const seen = new Set(state.books.map(key));
+    const now = new Date().toISOString();
+    let added = 0;
+    for (const b of list) {
+      const k = key(b);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      state.books.push({ ...b, id: uid(), createdAt: now, updatedAt: now });
+      added++;
+    }
+    if (!save()) throw new Error('Não foi possível guardar (armazenamento cheio?).');
+    return added;
+  },
+
+  isDuplicate(b) {
+    const t = (b.title || '').trim().toLocaleLowerCase('pt'), a = (b.author || '').trim().toLocaleLowerCase('pt');
+    return state.books.some(x => (x.title || '').trim().toLocaleLowerCase('pt') === t && (x.author || '').trim().toLocaleLowerCase('pt') === a);
+  },
+
   deleteBook(id) {
     state.books = state.books.filter(b => b.id !== id);
     return save();

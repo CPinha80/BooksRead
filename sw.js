@@ -1,9 +1,9 @@
 // Service worker: a app funciona offline. Aumenta VERSION a cada alteração.
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = `booksread-${VERSION}`;
 const ASSETS = [
   './', 'index.html', 'styles.css', 'manifest.webmanifest',
-  'js/app.js', 'js/store.js', 'js/stats.js', 'js/ai.js', 'js/util.js',
+  'js/app.js', 'js/store.js', 'js/stats.js', 'js/ai.js', 'js/util.js', 'js/importer.js',
   'vendor/anthropic-sdk.mjs',
   'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png',
 ];

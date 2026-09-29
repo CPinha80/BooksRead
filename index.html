@@ -43,7 +43,8 @@
       <ul id="book-list" class="book-list"></ul>
       <div id="empty-books" class="empty" hidden>
         <p>📚 Ainda não tens livros.</p>
-        <p>Toca em <strong>＋</strong> para adicionar o primeiro.</p>
+        <p>Toca em <strong>＋</strong> para adicionar o primeiro,<br>ou importa a lista que já tens.</p>
+        <label class="file-btn primary-file">Importar Excel ou CSV<input type="file" class="import-input" hidden></label>
       </div>
     </section>
 
@@ -104,11 +105,11 @@
 
       <div class="form">
         <h2>Cópia de segurança</h2>
-        <p class="hint">Os dados vivem no teu iPhone. Exporta de vez em quando para não os perderes.</p>
+        <p class="hint">Os dados vivem no teu iPhone. Exporta de vez em quando para não os perderes. «Importar» aceita a cópia de segurança (JSON) ou uma lista em Excel (.xlsx) ou CSV.</p>
         <div class="btn-row">
           <button id="export-json">Exportar (JSON)</button>
           <button id="export-csv">Exportar (CSV)</button>
-          <label class="file-btn">Importar<input type="file" id="import-file" accept=".json,application/json" hidden></label>
+          <label class="file-btn">Importar<input type="file" class="import-input" hidden></label>
         </div>
         <button id="copy-prompt" class="secondary">Copiar prompt para a app Claude</button>
         <button id="wipe" class="danger">Apagar todos os dados</button>
@@ -175,6 +176,32 @@
       <input type="hidden" id="f-cover">
       <input type="hidden" id="f-year">
       <button type="button" id="delete-book" class="danger" hidden>Apagar livro</button>
+    </form>
+  </dialog>
+
+  <!-- Importação de Excel / CSV -->
+  <dialog id="import-sheet" class="sheet">
+    <form id="import-form" method="dialog" class="form">
+      <div class="sheet-head">
+        <button type="button" class="link-btn" id="import-cancel">Cancelar</button>
+        <strong>Importar lista</strong>
+        <button type="submit" class="link-btn strong" id="import-go">Importar</button>
+      </div>
+      <p class="hint" id="import-file-name"></p>
+      <label id="import-sheet-field" hidden>Folha
+        <select id="import-sheet-select"></select>
+      </label>
+      <h2>Que coluna corresponde a cada campo?</h2>
+      <div id="import-map" class="map-grid"></div>
+      <label>Livros sem estado nem datas ficam como
+        <select id="import-default">
+          <option value="read">Lido</option>
+          <option value="toread">Por ler</option>
+        </select>
+      </label>
+      <h2>Pré-visualização</h2>
+      <p id="import-summary" class="hint"></p>
+      <ul id="import-preview" class="records"></ul>
     </form>
   </dialog>
 

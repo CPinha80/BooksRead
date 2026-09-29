@@ -2,6 +2,7 @@ import { store } from './store.js';
 import { renderStats, todayStr, parseDate, readingDays } from './stats.js';
 import { MODES, ask, buildPastePrompt, explainError } from './ai.js';
 import { esc, toast, download, copyText, markdown } from './util.js';
+import { readSpreadsheet, headerRow, guessMapping, rowsToBooks, FIELDS } from './importer.js';
 
 const $ = sel => document.querySelector(sel);
 const STATUS_LABEL = { read: 'Lido', reading: 'A ler', toread: 'Por ler', abandoned: 'Abandonado' };
@@ -383,18 +384,90 @@ $('#export-csv').addEventListener('click', () => {
   const rows = [cols.join(','), ...store.books.map(b => cols.map(c => q(c === 'status' ? STATUS_LABEL[b.status] : b[c])).join(','))];
   download(`livros-${stamp()}.csv`, '﻿' + rows.join('\n'), 'text/csv');
 });
-$('#import-file').addEventListener('change', async e => {
+/* ---------- Importar (JSON, Excel, CSV) ---------- */
+const importDlg = $('#import-sheet');
+let imp = null; // { sheets, sheet, hdr, map }
+
+document.querySelectorAll('.import-input').forEach(input => input.addEventListener('change', async e => {
   const file = e.target.files[0];
+  e.target.value = '';
   if (!file) return;
   try {
-    const n = store.importData(JSON.parse(await file.text()));
-    toast(`${n} livros importados`);
-    renderList();
-    fillSettings();
+    if (/\.json$/i.test(file.name) || file.type === 'application/json') {
+      const n = store.importData(JSON.parse(await file.text()));
+      toast(`${n} livros importados`);
+      renderList();
+      fillSettings();
+      return;
+    }
+    const sheets = (await readSpreadsheet(file)).filter(s => s.rows.some(r => r.some(c => String(c).trim())));
+    if (!sheets.length) throw new Error('A folha está vazia.');
+    imp = { sheets };
+    $('#import-file-name').textContent = file.name;
+    $('#import-sheet-select').innerHTML = sheets.map((s, i) => `<option value="${i}">${esc(s.name)}</option>`).join('');
+    $('#import-sheet-field').hidden = sheets.length < 2;
+    selectImportSheet(0);
+    importDlg.showModal();
+    importDlg.scrollTop = 0;
   } catch (err) {
-    toast(err.message || 'Ficheiro inválido');
+    toast(err.message || 'Não foi possível ler o ficheiro', 4000);
   }
-  e.target.value = '';
+}));
+
+function selectImportSheet(i) {
+  const rows = imp.sheets[i].rows;
+  imp.sheet = i;
+  imp.hdr = headerRow(rows);
+  const headers = (rows[imp.hdr] || []).map(h => String(h).trim());
+  imp.map = guessMapping(headers);
+  const opts = ['<option value="">— não importar —</option>', ...headers.map((h, idx) => `<option value="${idx}">${esc(h || `Coluna ${idx + 1}`)}</option>`)].join('');
+  $('#import-map').innerHTML = FIELDS.map(([f, label]) => `<label>${label}<select data-field="${f}">${opts}</select></label>`).join('');
+  $('#import-map').querySelectorAll('select').forEach(sel => { sel.value = imp.map[sel.dataset.field] ?? ''; });
+  // Sem coluna de estado nem de datas, a lista é provavelmente de livros lidos.
+  $('#import-default').value = 'read';
+  previewImport();
+}
+
+function importBooks() {
+  return rowsToBooks(imp.sheets[imp.sheet].rows, imp.hdr, imp.map, $('#import-default').value);
+}
+
+function previewImport() {
+  const books = importBooks();
+  const dup = books.filter(b => store.isDuplicate(b)).length;
+  const by = st => books.filter(b => b.status === st).length;
+  $('#import-go').disabled = imp.map.title == null || !books.length;
+  if (imp.map.title == null) {
+    $('#import-summary').textContent = 'Escolhe a coluna com o título dos livros.';
+    $('#import-preview').innerHTML = '';
+    return;
+  }
+  $('#import-summary').textContent = `${books.length} livros encontrados: ${by('read')} lidos, ${by('reading')} a ler, ${by('toread')} por ler${by('abandoned') ? `, ${by('abandoned')} abandonados` : ''}.${dup ? ` ${dup} já existem e serão ignorados.` : ''}`;
+  $('#import-preview').innerHTML = books.slice(0, 8).map(b => `<li><span>${esc(b.title)}${b.author ? ` — ${esc(b.author)}` : ''}</span>
+    <strong>${STATUS_LABEL[b.status]}${b.endDate ? ` · ${b.endDate}` : b.startDate ? ` · desde ${b.startDate}` : ''}${b.rating ? ` · ${b.rating}★` : ''}</strong></li>`).join('')
+    + (books.length > 8 ? `<li class="hint">… e mais ${books.length - 8}</li>` : '');
+}
+
+$('#import-map').addEventListener('change', e => {
+  const sel = e.target.closest('select');
+  if (!sel) return;
+  imp.map[sel.dataset.field] = sel.value === '' ? null : Number(sel.value);
+  previewImport();
+});
+$('#import-sheet-select').addEventListener('change', e => selectImportSheet(Number(e.target.value)));
+$('#import-default').addEventListener('change', previewImport);
+$('#import-cancel').addEventListener('click', () => importDlg.close());
+$('#import-form').addEventListener('submit', e => {
+  e.preventDefault();
+  try {
+    const added = store.addBooks(importBooks());
+    importDlg.close();
+    toast(`${added} livros importados`, 3000);
+    show('books');
+    renderList();
+  } catch (err) {
+    toast(err.message, 4000);
+  }
 });
 $('#copy-prompt').addEventListener('click', async () => {
   const ok = await copyText(buildPastePrompt(store.books, 'knowledge'));
