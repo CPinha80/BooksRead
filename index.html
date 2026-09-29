@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Livros Lidos</title>
+  <meta name="description" content="Inventário pessoal de livros, métricas de leitura e mapa de conhecimento com IA.">
+  <meta name="theme-color" content="#2c3e50">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Livros">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1 id="view-title">Livros</h1>
+    <button id="add-btn" class="icon-btn" aria-label="Adicionar livro">＋</button>
+  </header>
+
+  <main id="app">
+    <!-- LIVROS -->
+    <section id="view-books" class="view active" aria-label="Livros">
+      <div class="search-row">
+        <input id="search" type="search" placeholder="Procurar título, autor, género…" autocomplete="off">
+        <select id="sort" aria-label="Ordenar">
+          <option value="recent">Recentes</option>
+          <option value="title">Título</option>
+          <option value="author">Autor</option>
+          <option value="rating">Classificação</option>
+          <option value="finished">Terminados</option>
+        </select>
+      </div>
+      <div class="segmented" id="status-filter" role="tablist">
+        <button data-status="all" class="on">Todos</button>
+        <button data-status="reading">A ler</button>
+        <button data-status="read">Lidos</button>
+        <button data-status="toread">Por ler</button>
+      </div>
+      <ul id="book-list" class="book-list"></ul>
+      <div id="empty-books" class="empty" hidden>
+        <p>📚 Ainda não tens livros.</p>
+        <p>Toca em <strong>＋</strong> para adicionar o primeiro.</p>
+      </div>
+    </section>
+
+    <!-- MÉTRICAS -->
+    <section id="view-stats" class="view viz-root" aria-label="Métricas"></section>
+
+    <!-- IA -->
+    <section id="view-ai" class="view" aria-label="IA">
+      <p class="lead">Com base nos livros que já leste (e nas tuas notas), a IA diz-te que conhecimento deverias ter, onde estão as lacunas e o que ler a seguir.</p>
+      <div class="ai-actions">
+        <button class="ai-card" data-mode="knowledge"><span>🧠</span><strong>Mapa de conhecimento</strong><small>O que deverias saber pelos livros que leste</small></button>
+        <button class="ai-card" data-mode="gaps"><span>🧭</span><strong>Lacunas e próximas leituras</strong><small>Áreas em falta e livros sugeridos</small></button>
+        <button class="ai-card" data-mode="quiz"><span>❓</span><strong>Testa-te</strong><small>Perguntas sobre as ideias dos teus livros</small></button>
+        <button class="ai-card" data-mode="profile"><span>🪞</span><strong>Perfil de leitor</strong><small>Padrões, temas e evolução</small></button>
+      </div>
+      <form id="ai-ask" class="ai-ask">
+        <textarea id="ai-question" rows="2" placeholder="Ou pergunta livremente… ex.: «Que conceitos de economia devo dominar?»"></textarea>
+        <button type="submit" class="primary">Perguntar</button>
+      </form>
+      <div id="ai-output" class="ai-output" hidden>
+        <div class="ai-output-head">
+          <span id="ai-output-title"></span>
+          <div>
+            <button id="ai-copy" class="link-btn">Copiar</button>
+            <button id="ai-stop" class="link-btn" hidden>Parar</button>
+          </div>
+        </div>
+        <div id="ai-text" class="md"></div>
+      </div>
+      <details class="ai-history-wrap">
+        <summary>Análises guardadas</summary>
+        <ul id="ai-history" class="ai-history"></ul>
+      </details>
+      <p class="hint" id="ai-key-hint"></p>
+    </section>
+
+    <!-- DEFINIÇÕES -->
+    <section id="view-settings" class="view" aria-label="Definições">
+      <form id="settings-form" class="form">
+        <h2>Meta de leitura</h2>
+        <label>Livros por ano
+          <input type="number" id="set-goal" min="0" max="1000" inputmode="numeric">
+        </label>
+
+        <h2>Inteligência Artificial</h2>
+        <label>Chave da API Anthropic
+          <input type="password" id="set-key" placeholder="sk-ant-…" autocomplete="off">
+        </label>
+        <p class="hint">A chave fica guardada apenas neste iPhone e é enviada só para api.anthropic.com. Cria uma em <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. Sem chave, podes usar «Copiar prompt» e colar na app Claude.</p>
+        <label>Modelo
+          <select id="set-model">
+            <option value="claude-opus-5-5">Claude Opus 5.5 (mais profundo)</option>
+            <option value="claude-sonnet-5-5">Claude Sonnet 5.5 (mais rápido e barato)</option>
+          </select>
+        </label>
+        <button type="submit" class="primary">Guardar</button>
+      </form>
+
+      <div class="form">
+        <h2>Cópia de segurança</h2>
+        <p class="hint">Os dados vivem no teu iPhone. Exporta de vez em quando para não os perderes.</p>
+        <div class="btn-row">
+          <button id="export-json">Exportar (JSON)</button>
+          <button id="export-csv">Exportar (CSV)</button>
+          <label class="file-btn">Importar<input type="file" id="import-file" accept=".json,application/json" hidden></label>
+        </div>
+        <button id="copy-prompt" class="secondary">Copiar prompt para a app Claude</button>
+        <button id="wipe" class="danger">Apagar todos os dados</button>
+      </div>
+      <p class="hint center">Livros Lidos · v1</p>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="Navegação">
+    <button data-view="books" class="on"><span>📚</span>Livros</button>
+    <button data-view="stats"><span>📊</span>Métricas</button>
+    <button data-view="ai"><span>✨</span>IA</button>
+    <button data-view="settings"><span>⚙️</span>Definições</button>
+  </nav>
+
+  <!-- Folha de edição do livro -->
+  <dialog id="book-sheet" class="sheet">
+    <form id="book-form" method="dialog" class="form">
+      <div class="sheet-head">
+        <button type="button" class="link-btn" id="sheet-cancel">Cancelar</button>
+        <strong id="sheet-title">Novo livro</strong>
+        <button type="submit" class="link-btn strong">Guardar</button>
+      </div>
+
+      <div id="lookup" class="lookup">
+        <input id="lookup-q" type="search" placeholder="Procurar online (título, autor ou ISBN)…" autocomplete="off">
+        <ul id="lookup-results"></ul>
+      </div>
+
+      <div class="cover-row">
+        <img id="f-cover-img" alt="" hidden>
+        <div class="grow">
+          <label>Título *<input id="f-title" required></label>
+          <label>Autor<input id="f-author" list="authors-list"></label>
+        </div>
+      </div>
+      <div class="two">
+        <label>Género<input id="f-genre" list="genres-list" placeholder="ex.: Filosofia"></label>
+        <label>Páginas<input id="f-pages" type="number" min="1" inputmode="numeric"></label>
+      </div>
+      <label>Estado
+        <select id="f-status">
+          <option value="toread">Por ler</option>
+          <option value="reading">A ler</option>
+          <option value="read">Lido</option>
+          <option value="abandoned">Abandonado</option>
+        </select>
+      </label>
+      <label id="current-page-field" hidden>Página atual
+        <input id="f-current" type="number" min="0" inputmode="numeric" placeholder="Para estimar quando terminas">
+      </label>
+      <div class="two">
+        <label>Comecei a ler<input id="f-start" type="date"></label>
+        <label>Terminei<input id="f-end" type="date"></label>
+      </div>
+      <div class="rating-field">
+        <span>Classificação</span>
+        <div id="f-rating" class="stars" role="radiogroup" aria-label="Classificação"></div>
+      </div>
+      <label>Notas
+        <textarea id="f-notes" rows="6" placeholder="Ideias principais, citações, o que aprendeste…"></textarea>
+      </label>
+      <p id="form-error" class="error" hidden></p>
+      <input type="hidden" id="f-cover">
+      <input type="hidden" id="f-year">
+      <button type="button" id="delete-book" class="danger" hidden>Apagar livro</button>
+    </form>
+  </dialog>
+
+  <datalist id="genres-list"></datalist>
+  <datalist id="authors-list"></datalist>
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
